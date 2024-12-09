@@ -1,0 +1,218 @@
+https://www.youtube.com/watch?v=Q26XECZh-EE
+
+
+select * from gov_requests where request_id in (15635,15636);
+
+My query is not running well/ approach of perf tuning / how to debug when there r many queries running 
+
+ans : 
+
+How much time my business can wait ?
+
+If it can wait 5 mins ? like ticket reservation 
+
+atm ? 15 secs 
+
+since when u have this problem ? 
+
+A. gradual drop of query performance 
+
+Due to data 
+
+Need to do partitioning 
+
+B. suddenly query performance drops ? 
+
+
+
+
+explain plan ? 
+
+is there full table scan ? 
+
+can i use hint? might change the execution part 
+
+maybe index is corrputed : so check the last analyzed date present in the tables : (user_tables & user_indexes)
+
+if it is maybe atleast 2 week old? then ask to compute the stats 
+
+analyze table table_name compute statistics;
+analyze index index_name compute statistics;
+
+Oracle stores the stats of the analyzed object in data dictionary 
+
+Check that every fk must be indexed 
+
+As per database documentation, every fk must be indexed, else it might sometime give u deadlock issue 
+which is hard to reproduce in local env.
+
+suppose there is an account table and dept table both having fk associated with each other 
+
+if one user from another session tries to I/U/D in the account table and at the same time.
+this will lock the dept table, other user who is accessing dept has to wait till this process completes causing deadlock.
+
+ 
+
+(𝐄𝐯𝐞𝐫𝐲 𝐅𝐨𝐫𝐞𝐢𝐠𝐧 𝐊𝐞𝐲 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐈𝐧𝐝𝐞𝐱𝐞𝐝 - 𝐈𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭 𝐂𝐨𝐧𝐜𝐞𝐩𝐭 𝐨𝐟 𝐏𝐞𝐫𝐟𝐨𝐫𝐦𝐚𝐧𝐜𝐞 𝐓𝐮𝐧𝐢𝐧𝐠
+
+For better performance of query, it is always advisable that every FK must be indexed. 
+As per oracle, We've been having some Oracle deadlock issues that have been hard to reproduce locally. while we've been pretty good creating integrity constraints in the database we have not been very good about making sure that every foreign key has a corresponding index. And that can lead to problems.
+
+𝐈𝐟 𝐰𝐞 𝐝𝐨 𝐧𝐨𝐭 𝐜𝐫𝐞𝐚𝐭𝐞 𝐈𝐧𝐝𝐞𝐱 𝐨𝐧 𝐅𝐊, 𝐢𝐭 𝐦𝐞𝐚𝐧𝐬 𝐰𝐞 𝐢𝐧𝐭𝐫𝐨𝐝𝐮𝐜𝐞 𝐚𝐧 𝐮𝐧𝐢𝐧𝐭𝐞𝐧𝐭𝐢𝐨𝐧𝐚𝐥 𝐝𝐞𝐟𝐞𝐜𝐭. Indexing foreign keys is a best practice in database management because it enhances query performance, ensures data integrity, and reduces locking issues. Implementing indexes thoughtfully can significantly improve the efficiency and responsiveness of your database system.
+
+
+𝐅𝐨𝐫 𝐞𝐱𝐚𝐦𝐩𝐥𝐞: So we had a situation where our documents table had a foreign key on the accounts table that was not indexed. So updating an account row lead to a whole table lock on documents (instead of just a row lock which would have happened if there was an index) and that was very bad when we had two separate processes where one was doing a bunch of accounts stuff and the other was doing a lot of documents stuff. Deadlocks for everyone!)
+
+
+Nowadays DBs are using cost based optimizer, so when a complex query is there
+
+DB follows steps : parser --> optimizer --> executor 
+
+
+DB has to choose for the minimum I/O(n/w or path) which depends on 3 scenarios : 
+
+which order, which method and which access path 
+
+1. order 
+
+now if there are suppose 5 tables in the query , there r 5!= 120 ways for DB to choose the order of the tables 
+
+2. method 
+
+suppose the order is A B C D E
+
+the method between A to B  can be (nested loop, sort merge join, hash join )
+same is the case wrt other tables as well
+
+this 3^4(A-B,B-C,C-D,D-E) = 81 methods for DB to access from one table to other table
+
+3. access path 
+
+index full scan
+table full scan
+range scan
+unique scan 
+star transformation
+bit map 
+btree 
+
+even if we consider avg 5 paths , so there will be 5^5= 3125
+
+So total of 1,2 and 3 combinations : 120*81*3125 =3.037 million possibilities
+
+DB will cannot afford enough time to check all these possibilites 
+
+It will instead go for a pragmatic approach and pick 2k best guesses & choose one of them
+
+So there is a possibility of choosing wrong path 
+
+Noida to Delhi 
+
+50 rs metro save time 
+but queue and crowd too many people 
+
+uber 500 rs , comfortable but costly 
+
+bus 10rs but take long time 
+
+The first time when the query runs, DB stores the plan # value in the library cache
+
+So in soft parsing, it will pick the plan from there which it had initally picked after
+checking only 2k of the possible 3M methods instead of wasting time to choose another path
+
+So if wrong plan is chosen the same will keep repeating, hence we need to intervene and finetune
+the query 
+
+So we can try rewriting the query like using CTE(common table expression)
+
+It is a divide and conquer approach where a long query is divided into multiple small queries
+
+And its best to filter the data as early as possible 
+
+Is there any distinct or union in use ? can i remove it ? 
+
+Is there any left join ? can replace it with inner join to reduce the amount of data from left ? 
+
+Is there order by ? can i remove order by ? 
+
+Is there 'IN ' and Exist ? can i remove IN by Exist ? 
+
+If the query is doing DML operation , we can go for Bulk Collect For All to fetch bulk data in 1 shot
+reducing context switch from SQL to PLSQL block 
+
+We can use NO logging with Append HINT (direct path insert) it will minimal of redo loggin and 
+make perf better in DML operation 
+
+IF the query is SELECT statement 
+
+we focus on : 
+
+1) how to avoid overhead of cpu 
+(check index & stats are appropriate or not using bulk binding or not,
+can i use with clause with materialize HINT or not 
+avoid distinct and union, avoide select * and choose the columns i need 
+can i remove like operator, wild card search , can i use instr instead ?
+can i reduce in clause and use exist clause ? 
+can i avoid functions like UPPER LOWER TRIM TRUNC)
+
+2) how to avoid overhead of memory
+
+help from DBA on how to tune my buffer cache 
+how to tune my SGA/PGA 
+how to tune my redo log buffer
+-------------------------------------------
+
+Identify the long running query
+
+either u provide me 
+
+else tell DBA to generate AWR (automatic workload repository)
+check table v$session_long_ops table which stores queries that took over 6 seconds
+
+
+If there is any blocking session then kill the session after confirmation from DBA 
+
+else 
+
+  is there any recent changes new index/sequence/table altered / new fk , some changes in the 
+  tables involved 
+  
+  OR 
+  
+  any large volume data operations have been performed? 
+  
+  IF yes 
+  
+     ask DBA to compute stats 
+ 
+     analyze table table_name compute statistics;
+     analyze index index_name compute statistics;
+
+  ELSE 
+     
+     check history of plan #value in AWR as the query was running perfectly fine till yesterday
+     
+     IF yes plan #value got changed 
+     
+         check for stale stats in DB_statistics table there is a column : is_stale_stats
+         
+         IF yes 
+         
+             compute stats 
+             
+         IF no 
+              
+              ask the DBA to pin the optimal plan by using SPM (sequel plan management )   
+              
+     IF no plan #value did NOT change 
+              
+              am i processing a lot more data ? if yes that's normal
+              
+              so what is the best time to run ? or did it run ? after business hours or during 
+              business hours when lots of users are using the system
+              
+              any issue with storage layer ? check with DBA temporary memory allocation issue 
+              
+              
+            
+              
