@@ -1,7 +1,6 @@
 https://www.youtube.com/watch?v=Q26XECZh-EE
 
 
-select * from gov_requests where request_id in (15635,15636);
 
 My query is not running well/ approach of perf tuning / how to debug when there r many queries running 
 
