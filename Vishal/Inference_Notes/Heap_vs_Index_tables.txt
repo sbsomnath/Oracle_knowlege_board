@@ -1,0 +1,65 @@
+Heap-Organized Tables
+Description:
+Default table type in Oracle.
+Data rows are stored in no particular order.
+Rows are located by a ROWID, which is a unique identifier that specifies the physical location of the row in the database.
+Characteristics:
+Primary Key Access:
+Primary key lookups involve first querying the primary key index to find the ROWID, and then using the ROWID to access the data.
+Flexibility:
+Suitable for tables with frequent insert, update, and delete operations.
+Storage:
+Row data is physically stored in blocks without being sorted by any index or key.
+Performance:
+Performs well for queries that need full table scans or don't require frequent access via primary keys.
+
+Use Cases:
+Tables with heavy write operations.
+Situations where access is not always keyed by a primary index.
+Data warehousing when full table scans are common.
+Index-Organized Tables (IOTs)
+Description:
+Data rows are stored in a B-tree index structure, sorted by the primary key.
+The data itself is part of the index, eliminating the need for a separate ROWID.
+Characteristics:
+Primary Key Access:
+Extremely efficient for queries involving primary keys since the data is stored within the index.
+Performance:
+Better for read-intensive workloads where access is primarily by primary key or range queries.
+Can be slower for heavy DML (INSERT, UPDATE, DELETE) operations due to the need to maintain the index structure.
+Storage:
+Does not use a ROWID; the physical order of data corresponds to the logical primary key order.
+Secondary indexes can be slower as they use a logical ROWID, adding an extra layer of indirection.
+Constraints:
+Limited support for certain types of constraints, such as foreign keys referencing IOTs.
+Use Cases:
+Tables that are read-intensive and accessed mostly via primary key or range queries.
+Applications needing faster random lookups by primary key.
+Scenarios where maintaining clustering on primary key provides better performance (e.g., OLTP systems).
+
+
+Choosing Between Heap and IOT
+Heap-organized tables are the best choice for general-purpose tables, especially when writes are frequent or access patterns are diverse.
+Index-organized tables shine in scenarios where:
+Most queries rely on primary key lookups or range scans.
+High read performance is critical, especially for OLTP systems.
+
+Heap-Organized Table:
+
+CREATE TABLE employees (
+    emp_id NUMBER PRIMARY KEY,
+    emp_name VARCHAR2(50),
+    emp_dept VARCHAR2(30)
+);
+
+
+Index-Organized Table:
+
+CREATE TABLE employees (
+    emp_id NUMBER PRIMARY KEY,
+    emp_name VARCHAR2(50),
+    emp_dept VARCHAR2(30)
+) ORGANIZATION INDEX;
+
+
+
