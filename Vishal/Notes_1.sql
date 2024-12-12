@@ -9,7 +9,8 @@ what are different types of table?
 
 heap organised table -  (default)  new data in new row
 
-index organised table - data organised (takes time to insert) according to pk, faster way to retreive [keyword : organisational index in the create statement]
+index organised table - data organised (takes time to insert) according to pk, faster way to retreive 
+  [keyword : organisational index in the create statement]
 
 It must have a pk
 
@@ -98,10 +99,8 @@ whereas in the char  columne it will utilise all 10, it is fixed length rest it 
 
 ==> Difference between varchar and varchar2
 
-There is no difference beween varchar and varchar2, however it is advisable to use varchar2 as varchar is reserved for future utilisation of storing some 
-  different type of data
-
-
+There is no difference beween varchar and varchar2, however it is advisable to use varchar2 as varchar is reserved 
+  for future utilisation of storing some different type of data
 
 ==> Scenario , number column needs to adjust the values to the nearest hundred, like if the value entered is 2034, it should be 2000
 
@@ -119,17 +118,19 @@ insert into test values (1389);
 
 select * from test; ==> 1400
 
-==> increasing column size in a table is fast but decreasing the table column size is slow as it will check for the size of the max value in the column 
-  and then only it will allow you to
+==> increasing column size in a table is fast but decreasing the table column size is slow as it will check for 
+  the size of the max value in the column and then only it will allow you to
+  
 decrease the size if it is still greater than the max value, it will check all the millions of records one by one  , 
   hence it is advisable to do decrease of column size during down time
 
+ UNUSED COLUMN
+ -------------- 
 
 ==> dropping of column is very expensive operation , it will block all other changes in the table
 
 alter table <table name> set unused column address ==> this is an instant operation irrespective of how many records are present 
-  as it does not physically remove the column from the db
-but marks the column as unusable
+as it does not physically remove the column from the db but marks the column as unusable
 
 this is irrevertable as it is a ddl statement
 
@@ -141,6 +142,9 @@ to find all the unused columns :  select * from dba_unused_col_tabs
 
 dropping unused column is a non blocking operation and will not affect the application related to the table
 
+INVISIBLE COLUMN
+-----------------  
+  
 ==> Invisible column for security purpose added feature in oracle 12c
 
 create table abc(
@@ -159,6 +163,9 @@ select column_id, column_Name, hidden_column from user_tab_cols where table_name
 
 Day 3  [https://www.youtube.com/live/9JQxFD-IUsM?feature=share]
 
+COLUMN ORDER
+------------  
+  
 By default when u add a column to a table it will always be added at the last
 
 How do i change the arrangement of the column?
@@ -177,15 +184,14 @@ id,
 name,
 email
 
-Now if i want the email column before the name column then , i will first mark the name column as invisible which will result in shifting the email column 
-  above the name column
+Now if i want the email column before the name column then , 
+i will first mark the name column as invisible which will result in shifting the email column above the name column 
 and then again mark the name column as visible
 
 
-
-
-virtual column
-
+VIRTUAL COLUMN
+--------------
+  
 scenario
 
 table has 3 columns a, b, c, i want a column that will AUTOMATICALLY POPULATE the data based on the formula, (a+b)*c
@@ -216,7 +222,8 @@ When data is deleted, it is written in the redo log buffer, so that rollbaack ca
 
 Truncate will reset the HWM and delete will not
 
-HWM stands for High WAter Mark --> it is the last block till which the data is written , it is the max amount of database block used by a segment
+HWM stands for High WAter Mark 
+  --> it is the last block till which the data is written , it is the max amount of database block used by a segment
 
 It is like a seperator between used block and free block
 
@@ -236,7 +243,8 @@ Scenario :
 
 I have a table with 10 mil records and i need to delete 5 mil , how to do?
 
-We cannot truncate the table as the entire data will get lost, and if we delete 5 mil records, it will hang your database or cause data base session block
+We cannot truncate the table as the entire data will get lost, 
+and if we delete 5 mil records, it will hang your database or cause data base session block
 
 so there are 2 ways of dealing with the issue
 
