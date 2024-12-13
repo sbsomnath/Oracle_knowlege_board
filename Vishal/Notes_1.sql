@@ -159,6 +159,8 @@ To find the hidden columns in a table , note no column id is assigned to a hidde
 
 select column_id, column_Name, hidden_column from user_tab_cols where table_name='<table name>';
 
+note : u can also place constraints on invisible column
+
 ==================================================================================================================================================================================================================
 
 Day 3  [https://www.youtube.com/live/9JQxFD-IUsM?feature=share]
@@ -206,8 +208,15 @@ Note : virtual columns can be made invisible
 
 alter table t1 modify col3 invisible;
 
-HENCE UPDATE CANNOT HAPPEN ON THE VIRTUAL COLUMN
+Why Can't Virtual Columns Be Updated?
+  
+Virtual columns are derived from other columns using the specified expression.
+They do not store data physically (unless explicitly defined as STORED in Oracle 11g and later).
+Any attempt to update a virtual column would contradict its definition, as the column's value depends solely on the computation formula.
 
+ORA-54013: INSERT or UPDATE operation disallowed on virtual columns
+
+  
 the virtual column can be varchar2 as well
 
 
@@ -250,15 +259,18 @@ so there are 2 ways of dealing with the issue
 
 First -
 
-create a temp table and insert the REQUIRED records into it from the main table .... create temp table as select * from main_table where required records;
+create a temp table and insert the REQUIRED records into it from the main table .... create temp table as select * from main_table 
+  where required records;
 
 drop the main table
 
-Disadvantage : u need to recompile all the invalid objects procedures ,functions related to it and provide the relevant access to the other users
+Disadvantage : u need to recompile all the invalid objects procedures ,functions related to it 
+and provide the relevant access to the other users
 
 Second
 
-create a temp table and insert the REQUIRED records into it from the main table .... create temp table as select * from main_table where required records;
+create a temp table and insert the REQUIRED records into it from the main table .... 
+create temp table as select * from main_table where required records;
 
 truncate the main table
 
@@ -267,7 +279,8 @@ insert records from the temp_table to the main table ,
 drop the temp_table
 
 insert/update/delete are dml operations which involves redo log buffer , 
-  but we can skip this by direct insert path using no logging option that will make the insert even faster  or we can disable the index and then insert
+but we can skip this by direct insert path using no logging option that will make the insert even faster  
+or we can disable the index and then insert
 ==================================================================================================================================================================================================================
 
 Day 4  [https://www.youtube.com/live/uSFQ0rPUZb8?feature=share]
@@ -281,7 +294,7 @@ unique key / candidate key/ super key
 
 primary key - when one column is used to uniquely identify the data
 
-composite primary key - 2-3 columns are needed to uniquely identify the data and no null values are allowed in ANY OF THE COLUMNS
+composite primary key - 2-3 columns are needed to uniquely identify the data and NO NULL values are allowed in ANY OF THE COLUMNS
 
 super key - 5 columns i am using to identify the unique record is called the super key
 
@@ -292,8 +305,9 @@ primary key does not allow NULL but in case of super key and candidate key , the
 
 difference betwen primary key and unique key : uniques key allows null , unique key allows multiple rows to have NULL values as well
 
-NULL = NULL and NULL <> NULL , both are wrong statements , NULL is undefined and unknown , NULL cannot be compared hence unique key allows multiple NULL values , 
-  hence it can be considered as unique
+NULL = NULL and NULL <> NULL , both are wrong statements , NULL is undefined and unknown ,
+NULL cannot be compared hence unique key allows multiple NULL values , 
+hence it can be considered as unique
 
 More than one unique keys are possible in the table but only 1 primary key is possible in the table
 
@@ -301,7 +315,8 @@ scenario : I have a table with 2 columns, how to identify the unique key and pri
 
 Based on the column data , if any one of the column has the possibility of having a NULL value then it cannot be a pk
 
-Now if both the column will never have null values , then will prefer the number column to be the pk , it has to do with indexing , pk will have an index
+Now if both the column will never have null values , then will prefer the number column to be the pk , 
+it has to do with indexing , pk will have an index
 
 If both are number as well then we can choose anyone of them
 
@@ -315,26 +330,56 @@ NO we cannot create 2 primary keys on a table but we can mimic a secondary prima
 
 But why we cannot create multiple primary keys ??
 
-Acccording to 2NF , fully funcional dependency , there cannot be multiple columns to uniquely identify a row
+According to 2NF , fully funcional dependency , there cannot be multiple columns to uniquely identify a row
 
+What is Second Normal Form (2NF)?
+
+Second Normal Form (2NF) is a rule in database normalization aimed at reducing redundancy and dependency anomalies.
+
+A table is in 2NF if:
+It is already in First Normal Form (1NF) (all columns contain atomic values).
+
+All non-key attributes are fully functionally dependent on the entire primary key.
+Fully Functional Dependency
+
+Functional Dependency: If column A determines column B, we say B is functionally dependent on A (A → B).
+Full Functional Dependency: A non-key column is fully functionally dependent on a composite primary key only if it depends on all parts of the key, not just a subset.
+
+Example:
+
+For a table with columns (student_id, course_id, grade):
+
+Primary Key: (student_id, course_id) (composite primary key).
+grade depends on both student_id and course_id. Hence, it is fully functionally dependent on the composite primary key.
+
+Why Multiple Primary Keys are Not Possible?
+
+  Violation of 2NF:
+
+If you allow multiple primary keys (e.g., PK1 and PK2), it suggests that two independent sets of columns can uniquely identify rows.
+  
 Scenario based question :
 
-There is already a table in prod with eact duplicate date , how do i prevent creation of additional duplicate data without NOT me wanting to DELETE ANY DATA IN PROD ?
+There is already a table in prod with exact duplicate date , how do i prevent creation of additional duplicate data 
+without NOT me wanting to DELETE ANY DATA IN PROD ?
 
 example there is a table having column sr and all the 4 rows of the table has the same value 1
 
-now if i have to make the column sr a pk, then i will need to delete all the duplicated and then only i will be allowed to add the primary key constraint
+now if i have to make the column sr a pk, then i will need to delete all the duplicated 
+  and then only i will be allowed to add the primary key constraint
 
-There is a concept of deferrable novalidate option that can be used  that can be used
+There is a concept of deferrable novalidate option that can be used 
 
-alter table abc add constraint pk primary key (sr) deferrable novalidate ; (question ..can a column already having null values can it be used in deferrable)
+alter table abc add constraint pk primary key (sr) deferrable novalidate ; 
+(question ..can a column already having null values can it be used in deferrable) ==> yes
 
-In this case i can create the pk which will allow the already present duplicates to exist but prevent any further duplicates from getting inserted
+In this case i can create the pk which will allow the already present duplicates to exist but prevent 
+any further duplicates from getting inserted
 
 49:39
 
-select * from the table where emp_id=... and empfname=... and emplame=... and email=... and phno=... all these columns are used to uniquely identify the data , 
-  then it is called a super key
+select * from the table where emp_id=... and empfname=... and emplame=... and email=... and phno=... 
+all these columns are used to uniquely identify the data , then it is called a super key
 
 candidate key is part of the super key ,  meaning min number of columns from the super key to uniquely identify the data
 
@@ -347,23 +392,27 @@ Note : Distinct, union and analytical functions , they all internally combine al
 ==================================================================================================================================================================================================================
 Day 5   https://www.youtube.com/watch?v=7x6o5c-HuQc&list=PLNvBE2ODBJJ9kZqfIuAg8I_YcajKBLKcH&index=19
 
-When more than 1 column comes into the primary key it is called the composite key , none of the columns in the composite primary key can be NULL
+When more than 1 column comes into the primary key it is called the composite key , 
+none of the columns in the composite primary key can be NULL
 
 Surrogacy concept
 
-Surrogate key : any column or set of column that can be declared as a primary key instead of a real key. We generated that key through sequence(artificially generated, 
-  which may not have any business meaning example patient id in a hospital)
+Surrogate key : any column or set of column that can be declared as a primary key instead of a real key. 
+We generated that key through sequence(artificially generated, 
+which may not have any business meaning example patient id in a hospital)
 
 But Aadhar card number,  Pan card number are part of data of the patient, it is not artificially generated
 
 Surrogate key is never duplicate and it will never be NULL as it is generated with the purpose of uniquely identifying a record
 
-If we create a primary key, db will create a unique index on that which will be a separate structure , this is the advantage of a surrogate key over primary key
+If we create a primary key, db will create a unique index on that which will be a separate structure , 
+this is the advantage of a surrogate key over primary key
 
-If there is any change, insert/update/delete in the primary key or any one of the composite primary key, then the changes have to be maintained in the index as well
+If there is any change, insert/update/delete in the primary key or any one of the composite primary key, 
+then the changes have to be maintained in the index as well
 
-Index is a binary structure , hence it has to keep adjusting the index based on the changes in the values of the primary keys, this is called the concept of indexing 
-  and it is time expensive
+Index is a binary structure , hence it has to keep adjusting the index based on the changes in the values of the primary keys, 
+this is called the concept of indexing and it is time expensive
 
 Hence surrogate key is preferable over a composite primary key
 
